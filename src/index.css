@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-section,
+  .print-section * {
+    visibility: visible;
+  }
+
+  .print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    min-height: 297mm;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+}
+
+/* Certificate decorative frame */
+.cert-frame {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm;
+  background: white;
+}
+
+.cert-frame::before {
+  content: '';
+  position: absolute;
+  inset: 6mm;
+  border: 2px solid #b8860b;
+  pointer-events: none;
+}
+
+.cert-frame::after {
+  content: '';
+  position: absolute;
+  inset: 8mm;
+  border: 1px solid #daa520;
+  pointer-events: none;
+}
+
+/* Corner ornaments */
+.cert-corner {
+  position: absolute;
+  width: 20mm;
+  height: 20mm;
+  pointer-events: none;
+}
+
+.cert-corner::before,
+.cert-corner::after {
+  content: '';
+  position: absolute;
+  background: #b8860b;
+}
+
+.cert-corner-tl { top: 6mm; left: 6mm; }
+.cert-corner-tr { top: 6mm; right: 6mm; }
+.cert-corner-bl { bottom: 6mm; left: 6mm; }
+.cert-corner-br { bottom: 6mm; right: 6mm; }
+
+.cert-corner-tl::before,
+.cert-corner-tr::before,
+.cert-corner-bl::before,
+.cert-corner-br::before {
+  width: 20mm;
+  height: 2px;
+}
+
+.cert-corner-tl::after,
+.cert-corner-tr::after,
+.cert-corner-bl::after,
+.cert-corner-br::after {
+  width: 2px;
+  height: 20mm;
+}
+
+.cert-corner-tl::before { top: 0; left: 0; }
+.cert-corner-tl::after { top: 0; left: 0; }
+.cert-corner-tr::before { top: 0; right: 0; }
+.cert-corner-tr::after { top: 0; right: 0; }
+.cert-corner-bl::before { bottom: 0; left: 0; }
+.cert-corner-bl::after { bottom: 0; left: 0; }
+.cert-corner-br::before { bottom: 0; right: 0; }
+.cert-corner-br::after { bottom: 0; right: 0; }
+
+/* Gold accent line */
+.cert-gold-line {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #b8860b, #daa520, #b8860b, transparent);
+}
+
+/* Pavilion color badge */
+.pav-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
