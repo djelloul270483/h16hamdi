@@ -33,3 +33,4 @@ yarn-error.log*
 # Sample data files
 src/data/*.xlsx
 src/data/*.xls
+!docs/
