@@ -95,7 +95,7 @@ export default function QuickSearch() {
                 <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <MapPin className="w-3.5 h-3.5" style={{ color: pavColor }} />
-                    <span>{s.pavillon ? <span className="pav-badge text-[9px]" style={{ backgroundColor: pavColor }}>{s.pavillon.replace('PAV ', 'P')}</span> : '—'} / {s.chambre || '—'}</span>
+                    <span>{s.pavillon ? <span className="pav-badge text-[9px]" style={{ backgroundColor: pavColor }}>{s.pavillon.replace('PAV ', 'P')}</span> : '—'} / {s.chambre ? String(parseInt(s.chambre.replace(/^.*[-_]/, ''), 10) || s.chambre) : '—'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <Hash className="w-3.5 h-3.5 text-amber-500" />

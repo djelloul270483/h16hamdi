@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from './components/Layout';
 import DbSetup from './components/DbSetup';
+import PasswordGuard from './components/PasswordGuard';
 import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import RoomPlan from './pages/RoomPlan';
@@ -16,27 +17,29 @@ export default function App() {
   const [page, setPage] = useState<Page>('dashboard');
   const [dbReady, setDbReady] = useState(false);
 
-  if (!dbReady) {
-    return <DbSetup onReady={() => setDbReady(true)} />;
-  }
-
   const renderPage = () => {
     switch (page) {
-      case 'dashboard': return <Dashboard />;
-      case 'students': return <Students />;
-      case 'plan': return <RoomPlan />;
-      case 'inventory': return <RoomInventory />;
-      case 'housing-cert': return <HousingCertificate />;
+      case 'dashboard':      return <Dashboard />;
+      case 'students':       return <Students />;
+      case 'plan':           return <RoomPlan />;
+      case 'inventory':      return <RoomInventory />;
+      case 'housing-cert':   return <HousingCertificate />;
       case 'clearance-cert': return <ClearanceCertificate />;
-      case 'import': return <ImportData />;
-      case 'search': return <QuickSearch />;
-      default: return <Dashboard />;
+      case 'import':         return <ImportData />;
+      case 'search':         return <QuickSearch />;
+      default:               return <Dashboard />;
     }
   };
 
   return (
-    <Layout currentPage={page} onNavigate={setPage}>
-      {renderPage()}
-    </Layout>
+    <PasswordGuard>
+      {!dbReady ? (
+        <DbSetup onReady={() => setDbReady(true)} />
+      ) : (
+        <Layout currentPage={page} onNavigate={setPage}>
+          {renderPage()}
+        </Layout>
+      )}
+    </PasswordGuard>
   );
 }

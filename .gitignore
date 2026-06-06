@@ -1,14 +1,18 @@
+# Dependencies
+node_modules
+
+# Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
+# Environment
 *.local
+.env
 
+# Editor
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -18,4 +22,14 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
-.env
+
+# Build (keep dist and docs for deployment)
+# dist is kept for GitHub Pages via docs/
+
+# Bolt/Netlify (internal tools, not needed)
+.bolt
+.netlify
+
+# Sample data files
+src/data/*.xlsx
+src/data/*.xls

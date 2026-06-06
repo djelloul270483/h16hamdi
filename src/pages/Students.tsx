@@ -221,7 +221,7 @@ export default function Students() {
                             {s.pavillon.replace('PAV ', 'P')}
                           </span>
                         ) : <span className="text-slate-400">—</span>}
-                        {s.chambre && <span className="text-slate-500 text-xs mr-1.5">/ {s.chambre}</span>}
+                        {s.chambre && <span className="text-slate-500 text-xs mr-1.5">/ {String(parseInt(s.chambre.replace(/^.*[-_]/, ''), 10) || s.chambre)}</span>}
                       </td>
                       <td className="px-4 py-3 text-slate-600 text-xs">{s.niveau || '—'}</td>
                       <td className="px-4 py-3"><Badge value={s.paiement_hebergement} trueLabel="مسدد" falseLabel="لا" /></td>

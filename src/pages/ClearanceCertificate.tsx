@@ -11,7 +11,7 @@ function Row({ label, value, highlight = false }: {
 }) {
   return (
     <div className="flex justify-between items-center py-1.5 border-b border-dashed border-emerald-200/60 last:border-0">
-      <span className="text-slate-500 text-[12px]">{label}</span>
+      <span className="text-slate-700 text-[12px] font-bold">{label}</span>
       <span className={`font-bold text-[13px] ${highlight ? 'text-emerald-800' : 'text-slate-800'}`}>{value}</span>
     </div>
   );
@@ -209,7 +209,7 @@ export default function ClearanceCertificate() {
                     <Row label="الجنسية" value={selected.nationalite || '—'} />
                     <Row label="رقم التسجيل" value={selected.matricule_bac || '—'} />
                     <Row label="الجناح" value={selected.pavillon || '—'} highlight />
-                    <Row label="رقم الغرفة" value={selected.chambre || '—'} highlight />
+                    <Row label="رقم الغرفة" value={selected.chambre ? String(parseInt(selected.chambre.replace(/^.*[-_]/, ''), 10) || selected.chambre) : '—'} highlight />
                   </div>
 
                   <p className="text-slate-700 mb-3" dir="rtl">
