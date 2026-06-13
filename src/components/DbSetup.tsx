@@ -29,16 +29,70 @@ CREATE TABLE IF NOT EXISTS room_inventory (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id uuid REFERENCES students(id) ON DELETE CASCADE,
   pavillon text NOT NULL DEFAULT '', chambre text NOT NULL DEFAULT '',
-  matelas integer DEFAULT 1, couverture integer DEFAULT 1,
-  drap integer DEFAULT 2, oreiller integer DEFAULT 1,
-  taie_oreiller integer DEFAULT 1, chaise integer DEFAULT 1,
-  bureau integer DEFAULT 1, armoire integer DEFAULT 1,
+  lit integer DEFAULT 1,
+  matelas integer DEFAULT 1,
+  couvre_matelas integer DEFAULT 1,
+  couverture integer DEFAULT 1,
+  drap integer DEFAULT 2,
+  traversin integer DEFAULT 1,
+  couvre_traversin integer DEFAULT 1,
+  table_etude integer DEFAULT 1,
+  chaise integer DEFAULT 1,
+  lampe integer DEFAULT 1,
+  vachette integer DEFAULT 1,
+  clef integer DEFAULT 1,
+  plateau integer DEFAULT 1,
+  obs_lit text DEFAULT '', obs_matelas text DEFAULT '',
+  obs_couvre_matelas text DEFAULT '', obs_couverture text DEFAULT '',
+  obs_drap text DEFAULT '', obs_traversin text DEFAULT '',
+  obs_couvre_traversin text DEFAULT '', obs_table_etude text DEFAULT '',
+  obs_chaise text DEFAULT '', obs_lampe text DEFAULT '',
+  obs_vachette text DEFAULT '', obs_clef text DEFAULT '',
+  obs_plateau text DEFAULT '',
+  visa_blanchisserie text DEFAULT '',
+  visa_service text DEFAULT '',
+  mouchoir_visage integer DEFAULT 1,
+  annee text DEFAULT '',
   notes text DEFAULT '', date_entree date, date_sortie date,
   created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()
 );
 ALTER TABLE room_inventory ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon_all_inv" ON room_inventory FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all_inv" ON room_inventory FOR ALL TO authenticated USING (true) WITH CHECK (true);`;
+CREATE POLICY "auth_all_inv" ON room_inventory FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- If upgrading from old schema, run these:
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS lit integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS couvre_matelas integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS traversin integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS couvre_traversin integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS table_etude integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS lampe integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS vachette integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS clef integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS plateau integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_lit text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_matelas text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couvre_matelas text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couverture text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_drap text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_traversin text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couvre_traversin text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_table_etude text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_chaise text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_lampe text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_vachette text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_clef text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_plateau text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_blanchisserie text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_entree text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_sortie text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_blanchisserie_entree text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service_entree text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_blanchisserie_sortie text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service_sortie text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS mouchoir_visage integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS annee text DEFAULT '';`;
 
 interface Props {
   onReady: () => void;

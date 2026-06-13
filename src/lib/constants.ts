@@ -65,10 +65,10 @@ export const PAVILIONS = [
     color: '#0d9488',
     capacity: 2,
     floors: [
-      { name: 'الطابق السفلي', prefix: 0, start: 1, end: 22 },
+      { name: 'الطابق السفلي', prefix: 0, start: 1, end: 29 },
       { name: 'الطابق الأول', prefix: 1, start: 1, end: 27 },
       { name: 'الطابق الثاني', prefix: 2, start: 1, end: 29 },
-      { name: 'الطابق الثالث', prefix: 3, start: 1, end: 28 },
+      { name: 'الطابق الثالث', prefix: 3, start: 1, end: 30 },
       { name: 'الطابق الرابع', prefix: 4, start: 1, end: 28 },
       { name: 'الطابق الخامس', prefix: 5, start: 1, end: 29 },
     ],

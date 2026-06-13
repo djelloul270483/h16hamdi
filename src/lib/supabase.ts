@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = "https://fdjmywhwxcqmferhdvsk.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkam15d2h3eGNxbWZlcmhkdnNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDA3NjgsImV4cCI6MjA5NDI3Njc2OH0.fE19SulzKY24Wjh17e363OEtpBs-yjl8cWmfT77qy1k";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -38,17 +38,55 @@ export type RoomInventory = {
   student_id: string;
   pavillon: string;
   chambre: string;
+  lit: number;
   matelas: number;
+  couvre_matelas: number;
   couverture: number;
   drap: number;
-  oreiller: number;
-  taie_oreiller: number;
+  traversin: number;
+  couvre_traversin: number;
+  table_etude: number;
   chaise: number;
-  bureau: number;
-  armoire: number;
+  lampe: number;
+  vachette: number;
+  clef: number;
+  plateau: number;
+  obs_lit: string;
+  obs_matelas: string;
+  obs_couvre_matelas: string;
+  obs_couverture: string;
+  obs_drap: string;
+  obs_traversin: string;
+  obs_couvre_traversin: string;
+  obs_table_etude: string;
+  obs_chaise: string;
+  obs_lampe: string;
+  obs_vachette: string;
+  obs_clef: string;
+  obs_plateau: string;
+  visa_blanchisserie: string;
+  visa_service: string;
+  visa_entree: string;
+  visa_sortie: string;
+  visa_blanchisserie_entree: string;
+  visa_service_entree: string;
+  visa_blanchisserie_sortie: string;
+  visa_service_sortie: string;
+  mouchoir_visage: number;
+  annee: string;
   notes: string;
   date_entree: string | null;
   date_sortie: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type ImportLog = {
+  id: string;
+  imported_at: string;
+  file_name: string;
+  added: number;
+  updated: number;
+  algerien: number;
+  etranger: number;
 };

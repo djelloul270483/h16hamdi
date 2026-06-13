@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Wifi, ArrowRight } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Wifi, ArrowRight, History, ChevronDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 
@@ -225,6 +225,26 @@ export default function ImportData() {
   });
   const [dragOver, setDragOver] = useState(false);
   const [networkOk, setNetworkOk] = useState<boolean | null>(null);
+  const [importLogs, setImportLogs] = useState<Array<{ date: string; file: string; added: number; updated: number; algerien: number; etranger: number }>>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Load import history from localStorage
+  function loadHistory() {
+    try {
+      const raw = localStorage.getItem('import_logs');
+      if (raw) setImportLogs(JSON.parse(raw));
+    } catch { /* ignore */ }
+    setShowHistory(true);
+  }
+
+  function saveLog(file: string, added: number, updated: number, algerien: number, etranger: number) {
+    try {
+      const raw = localStorage.getItem('import_logs');
+      const logs = raw ? JSON.parse(raw) : [];
+      logs.unshift({ date: new Date().toISOString(), file, added, updated, algerien, etranger });
+      localStorage.setItem('import_logs', JSON.stringify(logs.slice(0, 50))); // keep last 50
+    } catch { /* ignore */ }
+  }
 
   async function testNetwork() {
     try {
@@ -423,6 +443,16 @@ export default function ImportData() {
         errors.push(`تم تحديث ${updated} طالب موجود (الجناح، الغرفة، المفتاح، الدفع)`);
       }
 
+      // Count algerien vs etranger in imported records
+      const importedRecs = records.slice(0, imported);
+      let algerien = 0, etranger = 0;
+      records.forEach(r => {
+        const nat = (r.nationalite || '').toLowerCase().trim();
+        if (nat.includes('algérien') || nat.includes('algerien') || nat === 'dz' || nat.includes('algérienne') || nat.includes('algerienne')) algerien++;
+        else if (nat) etranger++;
+      });
+      saveLog((window as Window & { _importFileName?: string })._importFileName || 'fichier.xlsx', imported, updated, algerien, etranger);
+
       setStatus(s => ({ ...s, phase: 'done', imported, skipped, updated, errors }));
     } catch (err) {
       setStatus(s => ({ ...s, phase: 'error', errors: [translateError(String(err))] }));
@@ -433,12 +463,12 @@ export default function ImportData() {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.name.match(/\.xlsx?$/i)) processFile(file);
+    if (file && file.name.match(/\.xlsx?$/i)) { (window as Window & { _importFileName?: string })._importFileName = file.name; processFile(file); }
   }
 
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) processFile(file);
+    if (file) { (window as Window & { _importFileName?: string })._importFileName = file.name; processFile(file); }
     // Reset input so the same file can be re-selected
     e.target.value = '';
   }
@@ -447,6 +477,49 @@ export default function ImportData() {
 
   return (
     <div className="space-y-5" dir="rtl">
+      {/* Import History */}
+      <div className="bg-white rounded-xl shadow-sm border border-amber-100 p-4">
+        <button onClick={() => { loadHistory(); }}
+          className="flex items-center gap-2 text-sm font-bold text-slate-700 w-full text-right">
+          <History className="w-4 h-4 text-amber-500" />سجل الاستيرادات السابقة
+          <ChevronDown className={`w-4 h-4 mr-auto text-slate-400 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+        </button>
+        {showHistory && (
+          importLogs.length === 0 ? (
+            <p className="text-xs text-slate-400 mt-3 text-center py-3">لا توجد سجلات استيراد سابقة</p>
+          ) : (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-amber-50">
+                    <th className="border border-slate-200 px-2 py-1.5 text-right text-amber-700">التاريخ</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-right text-amber-700">الملف</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-center text-emerald-700">جديد</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-center text-sky-700">محدّث</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">🇩🇿 جزائري</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">🌍 أجنبي</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importLogs.map((log, i) => (
+                    <tr key={i} className={i % 2 === 0 ? '' : 'bg-slate-50/40'}>
+                      <td className="border border-slate-200 px-2 py-1.5 text-slate-600 whitespace-nowrap">
+                        {new Date(log.date).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="border border-slate-200 px-2 py-1.5 text-slate-500 max-w-[120px] truncate">{log.file}</td>
+                      <td className="border border-slate-200 px-2 py-1.5 text-center font-bold text-emerald-600">{log.added}</td>
+                      <td className="border border-slate-200 px-2 py-1.5 text-center font-bold text-sky-600">{log.updated}</td>
+                      <td className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">{log.algerien}</td>
+                      <td className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">{log.etranger}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-amber-100 p-5">
         <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
           <FileSpreadsheet className="w-4 h-4 text-sky-500" />استيراد بيانات الطلبة من Excel
