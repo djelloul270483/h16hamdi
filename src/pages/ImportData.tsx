@@ -310,14 +310,16 @@ export default function ImportData() {
         return;
       }
 
-      // Filter out records without matricule_bac
-      const validRecords = records.filter(r => String(r.matricule_bac || '').trim() !== '');
+      // Filter out records without matricule_bac AND without NIN
+      const validRecords = records.filter(r => 
+        String(r.matricule_bac || '').trim() !== '' || String(r.nin || '').trim() !== ''
+      );
       const noMatricule = records.length - validRecords.length;
 
-      // Fetch existing students by matricule_bac to separate new vs existing
-      let existingData: { matricule_bac: string }[] = [];
+      // Fetch ALL existing students with their matricule_bac and NIN
+      let existingData: { id: string; matricule_bac: string | null; nin: string | null }[] = [];
       try {
-        const { data, error: fetchErr } = await supabase.from('students').select('matricule_bac');
+        const { data, error: fetchErr } = await supabase.from('students').select('id, matricule_bac, nin');
         if (fetchErr) throw fetchErr;
         existingData = data || [];
       } catch (fetchErr) {
@@ -325,10 +327,28 @@ export default function ImportData() {
         return;
       }
 
-      const existingSet = new Set(existingData.map(e => e.matricule_bac));
+      // Build lookup maps by matricule_bac and NIN
+      const byMatricule = new Map<string, string>(); // matricule_bac → student id
+      const byNin = new Map<string, string>(); // nin → student id
+      existingData.forEach(e => {
+        if (e.matricule_bac && String(e.matricule_bac).trim()) byMatricule.set(String(e.matricule_bac).trim(), e.id);
+        if (e.nin && String(e.nin).trim()) byNin.set(String(e.nin).trim(), e.id);
+      });
 
-      const newRecords = validRecords.filter(r => !existingSet.has(String(r.matricule_bac || '').trim()));
-      const existingRecords = validRecords.filter(r => existingSet.has(String(r.matricule_bac || '').trim()));
+      // Classify records: existing (found by matricule or NIN) vs new
+      const toUpdate: { id: string; record: Record<string, unknown> }[] = [];
+      const newRecords: Record<string, unknown>[] = [];
+
+      validRecords.forEach(r => {
+        const matBac = String(r.matricule_bac || '').trim();
+        const nin = String(r.nin || '').trim();
+        const existingId = byMatricule.get(matBac) || byNin.get(nin) || null;
+        if (existingId) {
+          toUpdate.push({ id: existingId, record: r });
+        } else {
+          newRecords.push(r);
+        }
+      });
 
       setStatus(s => ({ ...s, total: records.length, phase: 'importing' }));
 
@@ -407,35 +427,34 @@ export default function ImportData() {
         setStatus(s => ({ ...s, imported, skipped }));
       }
 
-      // Update existing students: pavillon, chambre, cle_remise, paiement_hebergement
-      for (const r of existingRecords) {
-        const matBac = String(r.matricule_bac || '').trim();
+      // Update existing students by ID — updates ALL fields including pavillon and chambre
+      for (const { id, record: r } of toUpdate) {
         const updateData: Record<string, unknown> = {
           pavillon: String(r.pavillon || ''),
           chambre: String(r.chambre || ''),
           cle_remise: parseBoolean(r.cle_remise),
           paiement_hebergement: parseBoolean(r.paiement_hebergement),
+          niveau: String(r.niveau || '') || undefined,
+          filiere: String(r.filiere || '') || undefined,
+          etablissement: String(r.etablissement || '') || undefined,
+          domaine: String(r.domaine || '') || undefined,
+          updated_at: new Date().toISOString(),
         };
+        // Remove undefined keys
+        Object.keys(updateData).forEach(k => updateData[k] === undefined && delete updateData[k]);
 
         try {
-          const { error } = await supabase
-            .from('students')
-            .update(updateData)
-            .eq('matricule_bac', matBac);
-
+          const { error } = await supabase.from('students').update(updateData).eq('id', id);
           if (error) {
             skipped++;
-            if (errors.length < 10) {
-              errors.push(`${r.nom || matBac}: ${translateError(error.message)}`);
-            }
+            if (errors.length < 10) errors.push(`${r.nom || id}: ${translateError(error.message)}`);
           } else {
             updated++;
           }
         } catch {
           skipped++;
-          if (errors.length < 10) errors.push(`${r.nom || matBac}: خطأ في الاتصال أثناء التحديث`);
+          if (errors.length < 10) errors.push(`${r.nom || id}: خطأ في الاتصال أثناء التحديث`);
         }
-
         setStatus(s => ({ ...s, imported, skipped, updated }));
       }
 

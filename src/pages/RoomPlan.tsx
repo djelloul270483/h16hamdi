@@ -68,27 +68,20 @@ export default function RoomPlan() {
       setLoading(true);
       const { data } = await supabase.from('students').select('*').ilike('pavillon', `%PAV ${selectedPavId}%`);
       const students: Student[] = data || [];
+
+      // Build roomMap using FULL 3-digit room number as key
+      // e.g., "PAV F-001" → "001", "PAV F-201" → "201", "1" → "001", "201" → "201"
       const roomMap: Record<string, Student[]> = {};
+
       students.forEach(s => {
-        if (s.chambre) {
-          // Index by chambre as-is
-          if (!roomMap[s.chambre]) roomMap[s.chambre] = [];
-          roomMap[s.chambre].push(s);
-          // Also index by extracted numeric part (e.g. "PAV F-001" → "1", "01", "001")
-          const numMatch = s.chambre.match(/(\d+)$/);
-          if (numMatch) {
-            const n = numMatch[1];
-            const plain = String(parseInt(n, 10));
-            const pad2  = plain.padStart(2, '0');
-            const pad3  = plain.padStart(3, '0');
-            [plain, pad2, pad3].forEach(key => {
-              if (key !== s.chambre) {
-                if (!roomMap[key]) roomMap[key] = [];
-                if (!roomMap[key].includes(s)) roomMap[key].push(s);
-              }
-            });
-          }
-        }
+        if (!s.chambre) return;
+        const numMatch = s.chambre.match(/(\d+)$/);
+        if (!numMatch) return;
+        const raw = numMatch[1];
+        // Pad to 3 digits to match roomNumberForFloor format (e.g. "1"→"001", "201"→"201")
+        const key = raw.padStart(3, '0');
+        if (!roomMap[key]) roomMap[key] = [];
+        if (!roomMap[key].find(x => x.id === s.id)) roomMap[key].push(s);
       });
 
       const floors: FloorData[] = pav.floors.map(floor => {
@@ -96,18 +89,9 @@ export default function RoomPlan() {
         for (let n = floor.start; n <= floor.end; n++) {
           const roomNum = roomNumberForFloor(floor, n);
           const chambreDash = `PAV ${selectedPavId}-${roomNum}`;
-          const chambreUnderscore = `PAV ${selectedPavId}_${roomNum}`;
-          // Also try plain number formats: "1", "01", "001"
-          const plainNum = String(n);
-          const padded2 = String(n).padStart(2, '0');
-          const padded3 = String(n).padStart(3, '0');
-          const students =
-            roomMap[chambreDash] ||
-            roomMap[chambreUnderscore] ||
-            roomMap[plainNum] ||
-            roomMap[padded2] ||
-            roomMap[padded3] ||
-            [];
+          // Use full room number as key (matches student chambre normalization)
+          // e.g. "001", "201"
+          const students = roomMap[roomNum] || [];
           rooms.push({ chambre: chambreDash, students, capacity: pav.capacity });
         }
         return { floor, rooms };
