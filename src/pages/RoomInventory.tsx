@@ -47,7 +47,7 @@ function PrintCard({ student, data, side }: PrintCardProps) {
   const parts = student.nom.split(' ');
   const nom = parts[0] || student.nom;
   const prenom = parts.slice(1).join(' ');
-  const cardStyle: React.CSSProperties = { width: '133mm', height: '190mm', border: '1.5px solid #666', padding: '5mm 6mm', fontFamily: 'Arial, sans-serif', fontSize: '9pt', background: '#fff', boxSizing: 'border-box', overflow: 'hidden' };
+  const cardStyle: React.CSSProperties = { width: '133mm', minHeight: '190mm', maxHeight: '194mm', border: '1.5px solid #666', padding: '5mm 6mm', fontFamily: 'Arial, sans-serif', fontSize: '9pt', background: '#fff', boxSizing: 'border-box' };
   const thStyle: React.CSSProperties = { border: '1px solid #666', padding: '1.5mm 2mm', textAlign: 'center', background: '#e8e8e8', fontSize: '8.5pt' };
   const tdStyle: React.CSSProperties = { border: '1px solid #999', padding: '1mm 2mm', lineHeight: '1.3' };
 
@@ -464,8 +464,8 @@ export default function RoomInventoryPage() {
               <PrintCard student={selected} data={editData} side="back" />
             </div>
           </div>
-          <div className="overflow-auto border border-slate-200 rounded-lg p-3 bg-slate-50">
-            <div style={{ transform: 'scale(0.78)', transformOrigin: 'top right' }}>
+          <div className="overflow-auto border border-slate-200 rounded-lg p-3 bg-slate-50" style={{ minHeight: '320px' }}>
+            <div style={{ transform: 'scale(0.65)', transformOrigin: 'top right', marginBottom: '-35%' }}>
               <PrintCard student={selected} data={editData} side={previewSide} />
             </div>
           </div>
