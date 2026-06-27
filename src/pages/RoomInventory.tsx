@@ -47,7 +47,7 @@ function PrintCard({ student, data, side }: PrintCardProps) {
   const parts = student.nom.split(' ');
   const nom = parts[0] || student.nom;
   const prenom = parts.slice(1).join(' ');
-  const cardStyle: React.CSSProperties = { width: '190mm', minHeight: '130mm', border: '1.5px solid #666', padding: '6mm 8mm', fontFamily: 'Arial, sans-serif', fontSize: '10pt', background: '#fff', boxSizing: 'border-box' };
+  const cardStyle: React.CSSProperties = { width: '190mm', height: '130mm', border: '1.5px solid #666', padding: '5mm 7mm', fontFamily: 'Arial, sans-serif', fontSize: '9.5pt', background: '#fff', boxSizing: 'border-box', overflow: 'hidden' };
   const thStyle: React.CSSProperties = { border: '1px solid #666', padding: '2mm 3mm', textAlign: 'center', background: '#e8e8e8' };
   const tdStyle: React.CSSProperties = { border: '1px solid #999', padding: '1.5mm 3mm' };
 
@@ -220,9 +220,32 @@ export default function RoomInventoryPage() {
     if (!contents) return;
     const win = window.open('', '', 'width=960,height=720');
     if (!win) return;
-    win.document.write(`<html><head><title>بطاقة الجرد — ${selected?.nom}</title>
-      <style>body{margin:8mm;font-family:Arial,sans-serif}table{border-collapse:collapse}@page{margin:8mm}@media print{.page-break{page-break-after:always}}</style>
-      </head><body>${contents}</body></html>`);
+    win.document.write(`<html><head><title>بطاقة الجرد — \${selected?.nom}</title>
+      <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        body { margin: 0; font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; }
+        .cut-line {
+          width: 190mm;
+          border: none;
+          border-top: 1.5px dashed #999;
+          margin: 4mm 0;
+          position: relative;
+        }
+        .cut-line::before {
+          content: 'قطع هنا ✂';
+          position: absolute;
+          top: -8px;
+          right: 50%;
+          transform: translateX(50%);
+          background: #fff;
+          padding: 0 3mm;
+          font-size: 7pt;
+          color: #aaa;
+          white-space: nowrap;
+        }
+      </style>
+      </head><body>\${contents}</body></html>`);
     win.document.close(); win.focus(); win.print(); win.close();
   }
 
@@ -422,7 +445,7 @@ export default function RoomInventoryPage() {
           </div>
           <div className="hidden" ref={printRef}>
             <PrintCard student={selected} data={editData} side="front" />
-            <div className="page-break" />
+            <div className="cut-line" />
             <PrintCard student={selected} data={editData} side="back" />
           </div>
           <div className="overflow-auto border border-slate-200 rounded-lg p-3 bg-slate-50">

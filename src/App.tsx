@@ -10,8 +10,9 @@ import HousingCertificate from './pages/HousingCertificate';
 import ClearanceCertificate from './pages/ClearanceCertificate';
 import ImportData from './pages/ImportData';
 import QuickSearch from './pages/QuickSearch';
+import AddStudent from './pages/AddStudent';
 
-type Page = 'dashboard' | 'students' | 'plan' | 'housing-cert' | 'clearance-cert' | 'import' | 'search' | 'inventory';
+type Page = 'dashboard' | 'students' | 'plan' | 'housing-cert' | 'clearance-cert' | 'import' | 'search' | 'inventory' | 'add-student';
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard');
@@ -27,6 +28,7 @@ export default function App() {
       case 'clearance-cert': return <ClearanceCertificate />;
       case 'import':         return <ImportData />;
       case 'search':         return <QuickSearch />;
+      case 'add-student':    return <AddStudent />;
       default:               return <Dashboard />;
     }
   };

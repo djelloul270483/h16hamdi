@@ -1,12 +1,12 @@
 import { ReactNode, useState, useEffect } from 'react';
 import {
   Home, Users, Map, FileText, FileCheck, Upload, Search,
-  Menu, X, Building2, ChevronRight, Calendar, Clock, Pencil, Check, Wifi, WifiOff
+  Menu, X, Building2, ChevronRight, Calendar, Clock, Pencil, Check, Wifi, WifiOff, UserPlus
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getYear, setYear } from '../lib/constants';
 
-type Page = 'dashboard' | 'students' | 'plan' | 'housing-cert' | 'clearance-cert' | 'import' | 'search' | 'inventory';
+type Page = 'dashboard' | 'students' | 'plan' | 'housing-cert' | 'clearance-cert' | 'import' | 'search' | 'inventory' | 'add-student';
 
 interface Props {
   currentPage: Page;
@@ -22,6 +22,7 @@ const navItems = [
   { id: 'housing-cert' as Page, label: 'شهادة الإيواء', labelFr: "Attestation d'hébergement", icon: FileText },
   { id: 'clearance-cert' as Page, label: 'شهادة التبرئة', labelFr: 'Attestation de décharge', icon: FileCheck },
   { id: 'import' as Page, label: 'استيراد البيانات', labelFr: 'Importer données', icon: Upload },
+  { id: 'add-student' as Page, label: 'إضافة طالب أجنبي', labelFr: 'Ajouter étudiant étranger', icon: UserPlus },
   { id: 'search' as Page, label: 'بحث سريع', labelFr: 'Recherche rapide', icon: Search },
 ];
 
