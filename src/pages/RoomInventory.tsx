@@ -47,48 +47,48 @@ function PrintCard({ student, data, side }: PrintCardProps) {
   const parts = student.nom.split(' ');
   const nom = parts[0] || student.nom;
   const prenom = parts.slice(1).join(' ');
-  const cardStyle: React.CSSProperties = { width: '190mm', height: '130mm', border: '1.5px solid #666', padding: '5mm 7mm', fontFamily: 'Arial, sans-serif', fontSize: '9.5pt', background: '#fff', boxSizing: 'border-box', overflow: 'hidden' };
-  const thStyle: React.CSSProperties = { border: '1px solid #666', padding: '2mm 3mm', textAlign: 'center', background: '#e8e8e8' };
-  const tdStyle: React.CSSProperties = { border: '1px solid #999', padding: '1.5mm 3mm' };
+  const cardStyle: React.CSSProperties = { width: '133mm', height: '190mm', border: '1.5px solid #666', padding: '5mm 6mm', fontFamily: 'Arial, sans-serif', fontSize: '9pt', background: '#fff', boxSizing: 'border-box', overflow: 'hidden' };
+  const thStyle: React.CSSProperties = { border: '1px solid #666', padding: '1.5mm 2mm', textAlign: 'center', background: '#e8e8e8', fontSize: '8.5pt' };
+  const tdStyle: React.CSSProperties = { border: '1px solid #999', padding: '1mm 2mm', lineHeight: '1.3' };
 
   if (side === 'front') return (
     <div style={cardStyle}>
-      <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '13pt', textDecoration: 'underline', marginBottom: '4mm', letterSpacing: '1px' }}>SERVICE HEBERGEMENT</div>
-      <div style={{ display: 'flex', gap: '10mm', marginBottom: '2mm' }}>
+      <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '12pt', textDecoration: 'underline', marginBottom: '3mm', letterSpacing: '1px' }}>SERVICE HEBERGEMENT</div>
+      <div style={{ display: 'flex', gap: '6mm', marginBottom: '1.5mm' }}>
         <span><b>FICHE INVENTAIRE N°</b> ............</span>
         <span><b>ANNEE</b> {String(data.annee || getYear())}</span>
       </div>
-      <div style={{ display: 'flex', gap: '10mm', marginBottom: '2mm' }}>
+      <div style={{ display: 'flex', gap: '6mm', marginBottom: '1.5mm' }}>
         <span><b>NOM :</b> {nom}</span>
         <span><b>PRENOM :</b> {prenom || '—'}</span>
       </div>
-      <div style={{ display: 'flex', gap: '10mm', marginBottom: '2mm' }}>
+      <div style={{ display: 'flex', gap: '6mm', marginBottom: '1.5mm' }}>
         <span><b>PAVILLON :</b> {student.pavillon || '—'}</span>
         <span><b>CHAMBRE :</b> {student.chambre || '—'}</span>
       </div>
-      <div style={{ display: 'flex', gap: '10mm', marginBottom: '3mm', fontSize: '9pt' }}>
+      <div style={{ display: 'flex', gap: '6mm', marginBottom: '2mm' }}>
         <span><b>تاريخ الدخول :</b> {String(data.date_entree || '............')}</span>
         <span><b>تاريخ الخروج :</b> {String(data.date_sortie || '............')}</span>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5pt' }}>
         <thead><tr>
           <th style={{ ...thStyle, width: '50%', textAlign: 'center' }}>DESIGNATION</th>
-          <th style={{ ...thStyle, width: '20%' }}>NOMBRE</th>
-          <th style={{ ...thStyle, width: '30%' }}>OBSERVATION</th>
+          <th style={{ ...thStyle, width: '18%' }}>NOMBRE</th>
+          <th style={{ ...thStyle, width: '32%' }}>OBSERVATION</th>
         </tr></thead>
         <tbody>
           {INVENTORY_ITEMS.map(item => (
             <tr key={item.key}>
               <td style={{ ...tdStyle, fontWeight: 'bold' }}>{item.fr}</td>
               <td style={{ ...tdStyle, textAlign: 'center' }}>{data[item.key]}</td>
-              <td style={{ ...tdStyle, fontSize: '8pt' }}>{data[OBS_KEYS[item.key]]}</td>
+              <td style={{ ...tdStyle }}>{data[OBS_KEYS[item.key]]}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5mm', fontSize: '9pt' }}>
-        <div style={{ textAlign: 'center' }}><b>L'ETUDIANT</b><div style={{ marginTop: '10mm', borderTop: '1px solid #888', width: '55mm' }} /></div>
-        <div style={{ textAlign: 'center' }}><b>CHEF DE SERVICE</b><div style={{ marginTop: '10mm', borderTop: '1px solid #888', width: '55mm' }} /></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4mm', fontSize: '8.5pt' }}>
+        <div style={{ textAlign: 'center' }}><b>L'ETUDIANT</b><div style={{ marginTop: '8mm', borderTop: '1px solid #888', width: '45mm' }} /></div>
+        <div style={{ textAlign: 'center' }}><b>CHEF DE SERVICE</b><div style={{ marginTop: '8mm', borderTop: '1px solid #888', width: '45mm' }} /></div>
       </div>
     </div>
   );
@@ -99,7 +99,7 @@ function PrintCard({ student, data, side }: PrintCardProps) {
       <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '12pt', textDecoration: 'underline', marginBottom: '4mm' }}>
         SERVICE HEBERGEMENT — {student.nom}
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5pt' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
         <thead>
           <tr>
             <th style={{ ...thStyle, width: '36%' }}>البيان</th>
@@ -110,13 +110,13 @@ function PrintCard({ student, data, side }: PrintCardProps) {
         <tbody>
           <tr>
             <td style={{ ...tdStyle, fontWeight: 'bold' }}>تأشيرة البياضة</td>
-            <td style={{ ...tdStyle, height: '18mm', verticalAlign: 'top', fontSize: '8pt' }}>{String(data.visa_blanchisserie_entree || '')}</td>
-            <td style={{ ...tdStyle, height: '18mm', verticalAlign: 'top', fontSize: '8pt' }}>{String(data.visa_blanchisserie_sortie || '')}</td>
+            <td style={{ ...tdStyle, height: '40mm', verticalAlign: 'top' }}>{String(data.visa_blanchisserie_entree || '')}</td>
+            <td style={{ ...tdStyle, height: '40mm', verticalAlign: 'top' }}>{String(data.visa_blanchisserie_sortie || '')}</td>
           </tr>
           <tr>
             <td style={{ ...tdStyle, fontWeight: 'bold' }}>تأشيرة مصلحة الإيواء</td>
-            <td style={{ ...tdStyle, height: '18mm', verticalAlign: 'top', fontSize: '8pt' }}>{String(data.visa_service_entree || '')}</td>
-            <td style={{ ...tdStyle, height: '18mm', verticalAlign: 'top', fontSize: '8pt' }}>{String(data.visa_service_sortie || '')}</td>
+            <td style={{ ...tdStyle, height: '40mm', verticalAlign: 'top' }}>{String(data.visa_service_entree || '')}</td>
+            <td style={{ ...tdStyle, height: '40mm', verticalAlign: 'top' }}>{String(data.visa_service_sortie || '')}</td>
           </tr>
           <tr>
             <td style={{ ...tdStyle, fontWeight: 'bold' }}>ماسح الوجه</td>
@@ -125,15 +125,15 @@ function PrintCard({ student, data, side }: PrintCardProps) {
           </tr>
         </tbody>
       </table>
-      <div style={{ marginTop: '5mm', fontSize: '9pt', borderTop: '1px solid #ccc', paddingTop: '3mm', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4mm' }}>
+      <div style={{ marginTop: '4mm', fontSize: '8.5pt', borderTop: '1px solid #ccc', paddingTop: '3mm', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '3mm' }}>
         <span><b>الجناح:</b> {student.pavillon || '—'}</span>
         <span><b>الغرفة:</b> {student.chambre || '—'}</span>
         <span><b>تاريخ الدخول:</b> {String(data.date_entree || '—')}</span>
         <span><b>تاريخ الخروج:</b> {String(data.date_sortie || '—')}</span>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '7mm', fontSize: '9pt' }}>
-        <div style={{ textAlign: 'center' }}><b>الطالب</b><div style={{ marginTop: '10mm', borderTop: '1px solid #888', width: '55mm' }} /></div>
-        <div style={{ textAlign: 'center' }}><b>رئيس المصلحة</b><div style={{ marginTop: '10mm', borderTop: '1px solid #888', width: '55mm' }} /></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6mm', fontSize: '8.5pt' }}>
+        <div style={{ textAlign: 'center' }}><b>الطالب</b><div style={{ marginTop: '10mm', borderTop: '1px solid #888', width: '45mm' }} /></div>
+        <div style={{ textAlign: 'center' }}><b>رئيس المصلحة</b><div style={{ marginTop: '10mm', borderTop: '1px solid #888', width: '45mm' }} /></div>
       </div>
     </div>
   );
@@ -222,27 +222,41 @@ export default function RoomInventoryPage() {
     if (!win) return;
     win.document.write(`<html><head><title>بطاقة الجرد — \${selected?.nom}</title>
       <style>
-        @page { size: A4 portrait; margin: 10mm; }
+        @page { size: A4 landscape; margin: 8mm; }
         body { margin: 0; font-family: Arial, sans-serif; }
         table { border-collapse: collapse; }
+        .print-wrapper {
+          display: flex;
+          flex-direction: row;
+          align-items: stretch;
+          gap: 0;
+          width: 279mm;
+        }
         .cut-line {
-          width: 190mm;
-          border: none;
-          border-top: 1.5px dashed #999;
-          margin: 4mm 0;
+          width: 10mm;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
           position: relative;
         }
         .cut-line::before {
-          content: 'قطع هنا ✂';
+          content: '';
           position: absolute;
-          top: -8px;
-          right: 50%;
-          transform: translateX(50%);
+          top: 0; bottom: 0;
+          left: 50%;
+          border-left: 1.5px dashed #aaa;
+        }
+        .cut-line::after {
+          content: '✂';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(90deg);
           background: #fff;
-          padding: 0 3mm;
-          font-size: 7pt;
+          padding: 2mm 0;
+          font-size: 9pt;
           color: #aaa;
-          white-space: nowrap;
         }
       </style>
       </head><body>\${contents}</body></html>`);
@@ -444,9 +458,11 @@ export default function RoomInventoryPage() {
             </div>
           </div>
           <div className="hidden" ref={printRef}>
-            <PrintCard student={selected} data={editData} side="front" />
-            <div className="cut-line" />
-            <PrintCard student={selected} data={editData} side="back" />
+            <div className="print-wrapper">
+              <PrintCard student={selected} data={editData} side="front" />
+              <div className="cut-line" />
+              <PrintCard student={selected} data={editData} side="back" />
+            </div>
           </div>
           <div className="overflow-auto border border-slate-200 rounded-lg p-3 bg-slate-50">
             <div style={{ transform: 'scale(0.78)', transformOrigin: 'top right' }}>
