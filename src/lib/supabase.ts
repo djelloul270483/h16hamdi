@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = "https://fdjmywhwxcqmferhdvsk.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkam15d2h3eGNxbWZlcmhkdnNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MDA3NjgsImV4cCI6MjA5NDI3Njc2OH0.fE19SulzKY24Wjh17e363OEtpBs-yjl8cWmfT77qy1k";
+const supabaseUrl = "https://fvuqhwptdmwkgcbpftsg.supabase.co";
+const supabaseAnonKey = "sb_publishable_GmuRI4gxOJVKi52sdujkaA_7abUSnKc";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -29,6 +29,8 @@ export type Student = {
   frais_inscription_paye: boolean;
   paiement_hebergement: boolean;
   cle_remise: boolean;
+  /** السنة الأكاديمية مثل '2025/2026' — لدعم الأرشفة السنوية */
+  annee: string;
   created_at: string;
   updated_at: string;
 };

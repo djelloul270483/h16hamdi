@@ -1,12 +1,24 @@
 import { ReactNode, useState, useEffect } from 'react';
 import {
   Home, Users, Map, FileText, FileCheck, Upload, Search,
+<<<<<<< HEAD
   Menu, X, Building2, ChevronRight, Calendar, Clock, Pencil, Check, Wifi, WifiOff, UserPlus
+=======
+  Menu, X, Building2, ChevronRight, Calendar, Clock, Pencil,
+  Check, WifiOff, UserPlus, ClipboardList,
+>>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getYear, setYear } from '../lib/constants';
 
+<<<<<<< HEAD
 type Page = 'dashboard' | 'students' | 'plan' | 'housing-cert' | 'clearance-cert' | 'import' | 'search' | 'inventory' | 'add-student';
+=======
+type Page =
+  | 'dashboard' | 'students' | 'plan' | 'housing-cert'
+  | 'clearance-cert' | 'import' | 'search' | 'inventory'
+  | 'add-student' | 'registration';
+>>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
 
 interface Props {
   currentPage: Page;
@@ -14,6 +26,7 @@ interface Props {
   children: ReactNode;
 }
 
+<<<<<<< HEAD
 const navItems = [
   { id: 'dashboard' as Page, label: 'لوحة الإحصائيات', labelFr: 'Tableau de bord', icon: Home },
   { id: 'students' as Page, label: 'قائمة الطلبة', labelFr: 'Liste des étudiants', icon: Users },
@@ -24,44 +37,49 @@ const navItems = [
   { id: 'import' as Page, label: 'استيراد البيانات', labelFr: 'Importer données', icon: Upload },
   { id: 'add-student' as Page, label: 'إضافة طالب أجنبي', labelFr: 'Ajouter étudiant étranger', icon: UserPlus },
   { id: 'search' as Page, label: 'بحث سريع', labelFr: 'Recherche rapide', icon: Search },
+=======
+const navItems: { id: Page; label: string; labelFr: string; icon: React.ElementType }[] = [
+  { id: 'dashboard',     label: 'لوحة الإحصائيات',  labelFr: 'Tableau de bord',         icon: Home         },
+  { id: 'students',      label: 'قائمة الطلبة',       labelFr: 'Liste des étudiants',      icon: Users        },
+  { id: 'plan',          label: 'مخطط الإيواء',       labelFr: "Plan d'hébergement",       icon: Map          },
+  { id: 'inventory',     label: 'بطاقات الجرد',        labelFr: 'Inventaire des chambres',  icon: Building2    },
+  { id: 'housing-cert',  label: 'شهادة الإيواء',      labelFr: "Attestation d'hébergement",icon: FileText     },
+  { id: 'clearance-cert',label: 'شهادة التبرئة',      labelFr: 'Attestation de décharge',  icon: FileCheck    },
+  { id: 'import',        label: 'استيراد البيانات',    labelFr: 'Importer données',         icon: Upload       },
+  { id: 'search',        label: 'بحث سريع',           labelFr: 'Recherche rapide',         icon: Search       },
+  { id: 'add-student',   label: 'إضافة طالب أجنبي',   labelFr: 'Ajouter étudiant étranger',icon: UserPlus     },
+  { id: 'registration',  label: 'تسجيل الإيواء',      labelFr: "Enregistrement d'accueil", icon: ClipboardList},
+>>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
 ];
 
+// ── Live Clock ────────────────────────────────────────────────────────────────
 function LiveClock() {
   const [now, setNow] = useState(new Date());
-
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
   const dateStr = now.toLocaleDateString('ar-DZ', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
-
   const timeStr = now.toLocaleTimeString('ar-DZ', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
   });
 
   return (
     <div className="flex items-center gap-3 text-xs text-slate-500">
       <span className="flex items-center gap-1.5">
-        <Calendar className="w-3.5 h-3.5 text-amber-500" />
-        {dateStr}
+        <Calendar className="w-3.5 h-3.5 text-amber-500" />{dateStr}
       </span>
       <span className="flex items-center gap-1.5">
-        <Clock className="w-3.5 h-3.5 text-amber-500" />
-        {timeStr}
+        <Clock className="w-3.5 h-3.5 text-amber-500" />{timeStr}
       </span>
     </div>
   );
 }
 
+// ── Year Badge ────────────────────────────────────────────────────────────────
 function YearBadge() {
   const [year, setLocalYear] = useState(getYear());
   const [editing, setEditing] = useState(false);
@@ -72,6 +90,8 @@ function YearBadge() {
     if (trimmed && trimmed.includes('/')) {
       setYear(trimmed);
       setLocalYear(trimmed);
+      // إرسال حدث لإعلام الصفحات الأخرى بتغيير السنة
+      window.dispatchEvent(new CustomEvent('yearChanged', { detail: trimmed }));
     }
     setEditing(false);
   };
@@ -107,6 +127,7 @@ function YearBadge() {
   );
 }
 
+// ── Network Status ────────────────────────────────────────────────────────────
 function NetworkStatus() {
   const [online, setOnline] = useState(true);
 
@@ -115,9 +136,7 @@ function NetworkStatus() {
       try {
         const { error } = await supabase.from('students').select('id').limit(1);
         setOnline(!error);
-      } catch {
-        setOnline(false);
-      }
+      } catch { setOnline(false); }
     }
     check();
     const interval = setInterval(check, 30000);
@@ -134,21 +153,25 @@ function NetworkStatus() {
   );
 }
 
+// ── Main Layout ───────────────────────────────────────────────────────────────
 export default function Layout({ currentPage, onNavigate, children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-amber-50/20 flex" dir="rtl">
-      {/* Overlay for mobile */}
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-20 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-64' : 'w-0 md:w-16'} bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col transition-all duration-300 fixed top-0 bottom-0 right-0 z-30 overflow-hidden`}
       >
+        {/* Logo */}
         <div className="p-4 border-b border-amber-700/30">
           {sidebarOpen ? (
             <div>
@@ -167,6 +190,7 @@ export default function Layout({ currentPage, onNavigate, children }: Props) {
           )}
         </div>
 
+        {/* Nav */}
         <nav className="flex-1 py-4 overflow-y-auto">
           {navItems.map(({ id, label, labelFr, icon: Icon }) => {
             const active = currentPage === id;
@@ -193,6 +217,7 @@ export default function Layout({ currentPage, onNavigate, children }: Props) {
           })}
         </nav>
 
+        {/* Collapse button */}
         <div className="p-3 border-t border-amber-700/30">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -203,6 +228,7 @@ export default function Layout({ currentPage, onNavigate, children }: Props) {
         </div>
       </aside>
 
+      {/* Main content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? 'md:mr-64' : 'md:mr-16'} mr-0`}>
         <NetworkStatus />
         <header className="bg-white/80 backdrop-blur-md border-b border-amber-100 px-4 py-3 flex items-center justify-between sticky top-0 z-20">

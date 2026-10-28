@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Users, Home, CreditCard, Key, Globe, Building, GraduationCap, TrendingUp } from 'lucide-react';
 import { supabase, Student } from '../lib/supabase';
-import { PAVILIONS } from '../lib/constants';
+import { PAVILIONS, getYear } from '../lib/constants';
 
 interface Stats {
   total: number;
@@ -23,6 +23,10 @@ interface Stats {
   nouveauxAlg: number; nouveauxEtr: number;
   masterAlg: number;   masterEtr: number;
   anciensAlg: number;  anciensEtr: number;
+  // مقارنة مع السنة الماضية
+  vraiNouveaux: number;   // جدد لم يكونوا العام الماضي
+  vraiAnciens: number;    // قدامى كانوا العام الماضي
+  hasPrevYear: boolean;
 }
 
 function StatCard({ icon: Icon, label, value, sub, gradient }: { icon: React.ElementType; label: string; value: number | string; sub?: string; gradient: string }) {
@@ -61,13 +65,51 @@ function ProgressBar({ label, value, max, color, badge }: { label: string; value
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentYear = getYear();
+
+  // حساب السنة السابقة تلقائياً
+  function prevYear(y: string): string {
+    const m = y.match(/(\d{4})\/(\d{4})/);
+    if (!m) return '';
+    return `${parseInt(m[1]) - 1}/${parseInt(m[2]) - 1}`;
+  }
 
   useEffect(() => {
     async function load() {
       try {
-        const { data, error } = await supabase.from('students').select('*');
-        if (error || !data) { setLoading(false); return; }
-        const students: Student[] = data;
+        // جلب طلبة السنة الحالية
+        let allData: Student[] = [];
+        let page = 0;
+        const PAGE = 1000;
+        while (true) {
+          const { data, error } = await supabase
+            .from('students')
+            .select('*')
+            .eq('annee', currentYear)
+            .range(page * PAGE, (page + 1) * PAGE - 1);
+          if (error) { setLoading(false); return; }
+          allData = allData.concat(data || []);
+          if (!data || data.length < PAGE) break;
+          page++;
+        }
+        const students: Student[] = allData;
+
+        // جلب matricule_bac لطلبة السنة الماضية للمقارنة
+        const py = prevYear(currentYear);
+        let prevMatricules = new Set<string>();
+        if (py) {
+          let prevPage = 0;
+          while (true) {
+            const { data: pd } = await supabase
+              .from('students')
+              .select('matricule_bac')
+              .eq('annee', py)
+              .range(prevPage * PAGE, (prevPage + 1) * PAGE - 1);
+            (pd || []).forEach(r => { if (r.matricule_bac) prevMatricules.add(r.matricule_bac.trim()); });
+            if (!pd || pd.length < PAGE) break;
+            prevPage++;
+          }
+        }
 
       const byPavilion: Record<string, number> = {};
       const nationalityMap: Record<string, number> = {};
@@ -105,6 +147,14 @@ export default function Dashboard() {
         else                { anciens++;         isAlg ? anciensAlg++  : anciensEtr++;  }
       });
 
+      // مقارنة مع السنة الماضية
+      let vraiNouveaux = 0, vraiAnciens = 0;
+      students.forEach(s => {
+        const mat = (s.matricule_bac || '').trim();
+        if (mat && prevMatricules.has(mat)) vraiAnciens++;
+        else vraiNouveaux++;
+      });
+
       setStats({
         total: students.length,
         paid: students.filter(s => s.paiement_hebergement).length,
@@ -117,6 +167,8 @@ export default function Dashboard() {
         bySexe: sexeMap,
         nouveaux, deuxiemePhase, anciens, algeriens, etrangers,
         nouveauxAlg, nouveauxEtr, masterAlg, masterEtr, anciensAlg, anciensEtr,
+        vraiNouveaux, vraiAnciens,
+        hasPrevYear: prevMatricules.size > 0,
       });
       setLoading(false);
     } catch {
@@ -216,6 +268,34 @@ export default function Dashboard() {
                 <div><p className="text-lg font-bold text-slate-700">{count}</p><p className="text-xs text-slate-500">{sexe === 'Garçon' ? 'ذكر' : 'أنثى'}</p></div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* مقارنة جدد / قدامى بناءً على السنة الماضية */}
+      {stats.hasPrevYear && (
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-amber-100">
+          <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-amber-600" />
+            مقارنة مع السنة الماضية — {prevYear(currentYear)}
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 text-center">
+              <div className="text-3xl font-bold text-emerald-700">{stats.vraiNouveaux.toLocaleString('fr-DZ')}</div>
+              <div className="text-sm font-semibold text-emerald-700 mt-1">🆕 طلبة جدد</div>
+              <div className="text-xs text-emerald-500 mt-0.5">لم يكونوا في السنة الماضية</div>
+              <div className="mt-2 text-xs text-emerald-600 font-medium">
+                {stats.total > 0 ? Math.round(stats.vraiNouveaux / stats.total * 100) : 0}% من الإجمالي
+              </div>
+            </div>
+            <div className="rounded-xl p-4 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 text-center">
+              <div className="text-3xl font-bold text-amber-700">{stats.vraiAnciens.toLocaleString('fr-DZ')}</div>
+              <div className="text-sm font-semibold text-amber-700 mt-1">🔄 طلبة قدامى</div>
+              <div className="text-xs text-amber-500 mt-0.5">كانوا مسجلين السنة الماضية</div>
+              <div className="mt-2 text-xs text-amber-600 font-medium">
+                {stats.total > 0 ? Math.round(stats.vraiAnciens / stats.total * 100) : 0}% من الإجمالي
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -7,7 +7,7 @@ export const PAVILIONS = [
     capacity: 1,
     floors: [
       { name: 'الطابق السفلي', prefix: 0, start: 1, end: 36 },
-      { name: 'الطابق الأول', prefix: 1, start: 1, end: 36 },
+      { name: 'الطابق الأول',  prefix: 1, start: 1, end: 36 },
       { name: 'الطابق الثاني', prefix: 2, start: 1, end: 44 },
       { name: 'الطابق الثالث', prefix: 3, start: 1, end: 44 },
       { name: 'الطابق الرابع', prefix: 4, start: 1, end: 44 },
@@ -21,7 +21,7 @@ export const PAVILIONS = [
     capacity: 1,
     floors: [
       { name: 'الطابق السفلي', prefix: 0, start: 1, end: 18 },
-      { name: 'الطابق الأول', prefix: 1, start: 1, end: 25 },
+      { name: 'الطابق الأول',  prefix: 1, start: 1, end: 25 },
       { name: 'الطابق الثاني', prefix: 2, start: 1, end: 25 },
       { name: 'الطابق الثالث', prefix: 3, start: 1, end: 25 },
       { name: 'الطابق الرابع', prefix: 4, start: 1, end: 25 },
@@ -36,7 +36,7 @@ export const PAVILIONS = [
     capacity: 1,
     floors: [
       { name: 'الطابق السفلي', prefix: 0, start: 1, end: 18 },
-      { name: 'الطابق الأول', prefix: 1, start: 1, end: 25 },
+      { name: 'الطابق الأول',  prefix: 1, start: 1, end: 25 },
       { name: 'الطابق الثاني', prefix: 2, start: 1, end: 25 },
       { name: 'الطابق الثالث', prefix: 3, start: 1, end: 25 },
       { name: 'الطابق الرابع', prefix: 4, start: 1, end: 25 },
@@ -51,7 +51,7 @@ export const PAVILIONS = [
     capacity: 2,
     floors: [
       { name: 'الطابق السفلي', prefix: 0, start: 1, end: 22 },
-      { name: 'الطابق الأول', prefix: 1, start: 1, end: 33 },
+      { name: 'الطابق الأول',  prefix: 1, start: 1, end: 33 },
       { name: 'الطابق الثاني', prefix: 2, start: 1, end: 33 },
       { name: 'الطابق الثالث', prefix: 3, start: 1, end: 33 },
       { name: 'الطابق الرابع', prefix: 4, start: 1, end: 33 },
@@ -65,8 +65,13 @@ export const PAVILIONS = [
     color: '#0d9488',
     capacity: 2,
     floors: [
+<<<<<<< HEAD
       { name: 'الطابق السفلي', prefix: 0, start: 1, end: 22 },
       { name: 'الطابق الأول', prefix: 1, start: 1, end: 27 },
+=======
+      { name: 'الطابق السفلي', prefix: 0, start: 1, end: 22 },  // ← تم التصحيح: كان 29
+      { name: 'الطابق الأول',  prefix: 1, start: 1, end: 27 },
+>>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
       { name: 'الطابق الثاني', prefix: 2, start: 1, end: 29 },
       { name: 'الطابق الثالث', prefix: 3, start: 1, end: 30 },
       { name: 'الطابق الرابع', prefix: 4, start: 1, end: 28 },
@@ -80,8 +85,13 @@ export const PAVILIONS = [
     color: '#e11d48',
     capacity: 1,
     floors: [
+<<<<<<< HEAD
       { name: 'الطابق السفلي', prefix: 0, start: 1, end: 22 },
       { name: 'الطابق الأول', prefix: 1, start: 1, end: 33 },
+=======
+      { name: 'الطابق السفلي', prefix: 0, start: 1, end: 22 },  // ← تم التصحيح: كان 20
+      { name: 'الطابق الأول',  prefix: 1, start: 1, end: 33 },
+>>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
       { name: 'الطابق الثاني', prefix: 2, start: 1, end: 33 },
       { name: 'الطابق الثالث', prefix: 3, start: 1, end: 33 },
       { name: 'الطابق الرابع', prefix: 4, start: 1, end: 33 },
@@ -106,10 +116,22 @@ export type Pavilion = {
   floors: PavilionFloor[];
 };
 
+export function getRoomsForPavilion(pavId: string): string[] {
+  const pav = PAVILIONS.find(p => p.id === pavId);
+  if (!pav) return [];
+  const rooms: string[] = [];
+  for (const floor of pav.floors) {
+    for (let n = floor.start; n <= floor.end; n++) {
+      rooms.push(`PAV ${pavId}-${floor.prefix}${String(n).padStart(2, '0')}`);
+    }
+  }
+  return rooms;
+}
+
 export const RESIDENCE_NAME = 'الإقامة الجامعية عين الباي 16';
-export const DIRECTORATE = 'مديرية الخدمات الجامعية عين الباي - قسنطينة';
+export const DIRECTORATE    = 'مديرية الخدمات الجامعية عين الباي - قسنطينة';
 export const NATIONAL_OFFICE = 'الديوان الوطني للخدمات الجامعية';
-export const DEFAULT_YEAR = '2025/2026';
+export const DEFAULT_YEAR   = '2025/2026';
 
 export function getYear(): string {
   return localStorage.getItem('academic_year') || DEFAULT_YEAR;

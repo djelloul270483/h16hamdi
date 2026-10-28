@@ -2,11 +2,16 @@ import { useState, useEffect } from 'react';
 import { Database, AlertCircle, CheckCircle, Loader, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const SQL = `CREATE TABLE IF NOT EXISTS students (
+const SQL = `-- ══════════════════════════════════════════════════════════════
+--  إنشاء الجداول (CREATE IF NOT EXISTS — آمن للتشغيل أكثر من مرة)
+-- ══════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS students (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nin text, code_photo text, annee_bac integer,
   matricule_bac text, wilaya_bac text, numero_inscription text,
   nom text NOT NULL DEFAULT '', date_naissance date,
+  lieu_naissance text DEFAULT '',
   sexe text DEFAULT '', nationalite text DEFAULT '',
   residence text DEFAULT '', pavillon text DEFAULT '',
   chambre text DEFAULT '', commune text DEFAULT '',
@@ -15,33 +20,44 @@ const SQL = `CREATE TABLE IF NOT EXISTS students (
   frais_inscription_paye boolean DEFAULT false,
   paiement_hebergement boolean DEFAULT false,
   cle_remise boolean DEFAULT false,
+  annee text NOT NULL DEFAULT '',
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all" ON students FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON students FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE INDEX IF NOT EXISTS students_nom_idx ON students(nom);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='students' AND policyname='anon_all') THEN
+    CREATE POLICY "anon_all" ON students FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='students' AND policyname='auth_all') THEN
+    CREATE POLICY "auth_all" ON students FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS students_nom_idx      ON students(nom);
 CREATE INDEX IF NOT EXISTS students_pavillon_idx ON students(pavillon);
+CREATE INDEX IF NOT EXISTS students_annee_idx    ON students(annee);
 CREATE INDEX IF NOT EXISTS students_paiement_idx ON students(paiement_hebergement);
+
+-- منع تكرار الطلبة: رقم البكالوريا فريد داخل نفس السنة الأكاديمية
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'students_matricule_bac_annee_key'
+  ) THEN
+    ALTER TABLE students ADD CONSTRAINT students_matricule_bac_annee_key
+      UNIQUE (matricule_bac, annee);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS room_inventory (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id uuid REFERENCES students(id) ON DELETE CASCADE,
   pavillon text NOT NULL DEFAULT '', chambre text NOT NULL DEFAULT '',
-  lit integer DEFAULT 1,
-  matelas integer DEFAULT 1,
-  couvre_matelas integer DEFAULT 1,
-  couverture integer DEFAULT 1,
-  drap integer DEFAULT 2,
-  traversin integer DEFAULT 1,
-  couvre_traversin integer DEFAULT 1,
-  table_etude integer DEFAULT 1,
-  chaise integer DEFAULT 1,
-  lampe integer DEFAULT 1,
-  vachette integer DEFAULT 1,
-  clef integer DEFAULT 1,
-  plateau integer DEFAULT 1,
+  lit integer DEFAULT 1, matelas integer DEFAULT 1,
+  couvre_matelas integer DEFAULT 1, couverture integer DEFAULT 1,
+  drap integer DEFAULT 2, traversin integer DEFAULT 1,
+  couvre_traversin integer DEFAULT 1, table_etude integer DEFAULT 1,
+  chaise integer DEFAULT 1, lampe integer DEFAULT 1,
+  vachette integer DEFAULT 1, clef integer DEFAULT 1, plateau integer DEFAULT 1,
   obs_lit text DEFAULT '', obs_matelas text DEFAULT '',
   obs_couvre_matelas text DEFAULT '', obs_couverture text DEFAULT '',
   obs_drap text DEFAULT '', obs_traversin text DEFAULT '',
@@ -49,48 +65,87 @@ CREATE TABLE IF NOT EXISTS room_inventory (
   obs_chaise text DEFAULT '', obs_lampe text DEFAULT '',
   obs_vachette text DEFAULT '', obs_clef text DEFAULT '',
   obs_plateau text DEFAULT '',
-  visa_blanchisserie text DEFAULT '',
-  visa_service text DEFAULT '',
+  visa_blanchisserie text DEFAULT '', visa_service text DEFAULT '',
   mouchoir_visage integer DEFAULT 1,
-  annee text DEFAULT '',
-  notes text DEFAULT '', date_entree date, date_sortie date,
+  annee text DEFAULT '', notes text DEFAULT '',
+  date_entree date, date_sortie date,
   created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()
 );
 ALTER TABLE room_inventory ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all_inv" ON room_inventory FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all_inv" ON room_inventory FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='room_inventory' AND policyname='anon_all_inv') THEN
+    CREATE POLICY "anon_all_inv" ON room_inventory FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='room_inventory' AND policyname='auth_all_inv') THEN
+    CREATE POLICY "auth_all_inv" ON room_inventory FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
--- If upgrading from old schema, run these:
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS lit integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS couvre_matelas integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS traversin integer DEFAULT 1;
+CREATE TABLE IF NOT EXISTS student_registrations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id uuid REFERENCES students(id) ON DELETE CASCADE,
+  nom text NOT NULL DEFAULT '',
+  pavillon text DEFAULT '', chambre text DEFAULT '',
+  numero_inscription text DEFAULT '',
+  qr_data text DEFAULT '',
+  slip_printed_at timestamptz,
+  face_scan_confirmed_at timestamptz,
+  status text DEFAULT 'pending',
+  annee text DEFAULT '',
+  created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE student_registrations ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='student_registrations' AND policyname='anon_all_reg') THEN
+    CREATE POLICY "anon_all_reg" ON student_registrations FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='student_registrations' AND policyname='auth_all_reg') THEN
+    CREATE POLICY "auth_all_reg" ON student_registrations FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS reg_student_id_idx ON student_registrations(student_id);
+CREATE INDEX IF NOT EXISTS reg_status_idx     ON student_registrations(status);
+CREATE INDEX IF NOT EXISTS reg_annee_idx      ON student_registrations(annee);
+
+-- ══════════════════════════════════════════════════════════════
+--  ترقية قاعدة بيانات قائمة (ALTER IF NOT EXISTS — آمن دائماً)
+-- ══════════════════════════════════════════════════════════════
+
+ALTER TABLE students ADD COLUMN IF NOT EXISTS annee text NOT NULL DEFAULT '';
+ALTER TABLE students ADD COLUMN IF NOT EXISTS lieu_naissance text DEFAULT '';
+CREATE INDEX IF NOT EXISTS students_annee_idx ON students(annee);
+UPDATE students SET annee = '2025/2026' WHERE annee = '';
+
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS lit              integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS couvre_matelas   integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS traversin        integer DEFAULT 1;
 ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS couvre_traversin integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS table_etude integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS lampe integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS vachette integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS clef integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS plateau integer DEFAULT 1;
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_lit text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_matelas text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couvre_matelas text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couverture text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_drap text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_traversin text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS table_etude      integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS lampe            integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS vachette         integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS clef             integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS plateau          integer DEFAULT 1;
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_lit              text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_matelas          text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couvre_matelas   text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couverture       text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_drap             text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_traversin        text DEFAULT '';
 ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_couvre_traversin text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_table_etude text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_chaise text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_lampe text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_vachette text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_clef text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_plateau text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_blanchisserie text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_entree text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_sortie text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_table_etude      text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_chaise           text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_lampe            text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_vachette         text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_clef             text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS obs_plateau          text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_blanchisserie      text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service            text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_entree             text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_sortie             text DEFAULT '';
 ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_blanchisserie_entree text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service_entree text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service_entree      text DEFAULT '';
 ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_blanchisserie_sortie text DEFAULT '';
-ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service_sortie text DEFAULT '';
+ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS visa_service_sortie      text DEFAULT '';
 ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS mouchoir_visage integer DEFAULT 1;
 ALTER TABLE room_inventory ADD COLUMN IF NOT EXISTS annee text DEFAULT '';`;
 

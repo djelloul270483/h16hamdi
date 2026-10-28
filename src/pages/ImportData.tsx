@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Wifi, ArrowRight, History, ChevronDown } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Wifi, ArrowRight, History, ChevronDown, Calendar } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
+import { getYear } from '../lib/constants';
 
 interface ImportStatus {
   total: number;
@@ -17,7 +18,6 @@ interface ImportStatus {
 const BATCH_SIZE = 25;
 
 const HEADER_ALIASES: Record<string, string> = {
-  // Standard format headers (from the template Excel file)
   'annee de bac': 'annee_bac',
   'matricule de bac': 'matricule_bac',
   'wilaya de bac': 'wilaya_bac',
@@ -39,8 +39,6 @@ const HEADER_ALIASES: Record<string, string> = {
   'frais inscription payé': 'frais_inscription_paye',
   'paiement hébergement': 'paiement_hebergement',
   'clé remise': 'cle_remise',
-
-  // Alternative French formats
   'annee bac': 'annee_bac',
   'année bac': 'annee_bac',
   'annee_bac': 'annee_bac',
@@ -63,8 +61,6 @@ const HEADER_ALIASES: Record<string, string> = {
   'paiement': 'paiement_hebergement',
   'cle remise': 'cle_remise',
   'cle_remise': 'cle_remise',
-
-  // Arabic alternatives
   'الرقم الوطني': 'nin',
   'رقم التعريف الوطني': 'nin',
   'سنة البكالوريا': 'annee_bac',
@@ -128,26 +124,12 @@ function normalizeHeader(h: string): string {
   return h.trim().toLowerCase().replace(/[_\-]/g, ' ').replace(/\s+/g, ' ').replace(/[éèêë]/g, 'e').replace(/[àâä]/g, 'a').replace(/[ùûü]/g, 'u').replace(/[ôö]/g, 'o').replace(/[îï]/g, 'i').replace(/ç/g, 'c');
 }
 
-// Known DB columns to prevent partial-match collisions
-const DB_COLUMNS = new Set([
-  'nin', 'code_photo', 'annee_bac', 'matricule_bac', 'wilaya_bac',
-  'numero_inscription', 'nom', 'date_naissance', 'lieu_naissance', 'sexe', 'nationalite',
-  'residence', 'pavillon', 'chambre', 'commune', 'etablissement',
-  'domaine', 'filiere', 'niveau', 'frais_inscription_paye',
-  'paiement_hebergement', 'cle_remise',
-]);
-
 function resolveColumn(excelHeader: string): string | null {
   const trimmed = excelHeader.trim();
-  // Exact match first
   if (HEADER_ALIASES[trimmed]) return HEADER_ALIASES[trimmed];
   if (HEADER_ALIASES[trimmed.toLowerCase()]) return HEADER_ALIASES[trimmed.toLowerCase()];
-  // Normalized match
   const norm = normalizeHeader(trimmed);
   if (HEADER_ALIASES[norm]) return HEADER_ALIASES[norm];
-  // Partial match with safety check: only match if the alias key
-  // is a significant portion of the header (>= 60% of the longer string)
-  // AND the result hasn't already been assigned
   for (const [alias, dbCol] of Object.entries(HEADER_ALIASES)) {
     const normAlias = normalizeHeader(alias);
     if (norm === normAlias) return dbCol;
@@ -199,17 +181,17 @@ function parseDate(val: unknown): string | null {
 
 function translateError(msg: string): string {
   const map: Record<string, string> = {
-    'duplicate key value violates unique constraint': 'تضارب في رقم التسجيل - يوجد طالب مسجل بنفس الرقم',
+    'duplicate key value violates unique constraint': 'تضارب في رقم التسجيل',
     'null value in column': 'قيمة فارغة في حقل مطلوب',
     'value too long for type': 'قيمة أطول من الحد المسموح',
-    'violates foreign key constraint': 'مرجع غير موجود في الجدول المرتبط',
-    'permission denied': 'صلاحية مرفوضة - تحقق من اتصال قاعدة البيانات',
-    'network': 'خطأ في الشبكة - تحقق من اتصال الإنترنت',
-    'failed to fetch': 'فشل الاتصال بالخادم - تحقق من اتصال الإنترنت وأعد المحاولة',
-    'load failed': 'فشل تحميل البيانات - تحقق من اتصال الإنترنت',
-    'networkerror': 'خطأ في الشبكة - تحقق من اتصال الإنترنت',
-    'typeerror': 'خطأ في الاتصال - تحقق من اتصال الإنترنت',
-    'fetch': 'فشل الاتصال - تحقق من اتصال الإنترنت',
+    'violates foreign key constraint': 'مرجع غير موجود',
+    'permission denied': 'صلاحية مرفوضة',
+    'network': 'خطأ في الشبكة',
+    'failed to fetch': 'فشل الاتصال بالخادم',
+    'load failed': 'فشل تحميل البيانات',
+    'networkerror': 'خطأ في الشبكة',
+    'typeerror': 'خطأ في الاتصال',
+    'fetch': 'فشل الاتصال',
   };
   const lower = msg.toLowerCase();
   for (const [key, ar] of Object.entries(map)) {
@@ -219,16 +201,17 @@ function translateError(msg: string): string {
 }
 
 export default function ImportData() {
+  const currentYear = getYear();
+
   const [status, setStatus] = useState<ImportStatus>({
     total: 0, imported: 0, updated: 0, skipped: 0, errors: [], phase: 'idle',
     columnMap: {}, unmappedHeaders: [],
   });
   const [dragOver, setDragOver] = useState(false);
   const [networkOk, setNetworkOk] = useState<boolean | null>(null);
-  const [importLogs, setImportLogs] = useState<Array<{ date: string; file: string; added: number; updated: number; algerien: number; etranger: number }>>([]);
+  const [importLogs, setImportLogs] = useState<Array<{ date: string; file: string; added: number; updated: number; algerien: number; etranger: number; annee?: string }>>([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Load import history from localStorage
   function loadHistory() {
     try {
       const raw = localStorage.getItem('import_logs');
@@ -241,8 +224,8 @@ export default function ImportData() {
     try {
       const raw = localStorage.getItem('import_logs');
       const logs = raw ? JSON.parse(raw) : [];
-      logs.unshift({ date: new Date().toISOString(), file, added, updated, algerien, etranger });
-      localStorage.setItem('import_logs', JSON.stringify(logs.slice(0, 50))); // keep last 50
+      logs.unshift({ date: new Date().toISOString(), file, added, updated, algerien, etranger, annee: currentYear });
+      localStorage.setItem('import_logs', JSON.stringify(logs.slice(0, 50)));
     } catch { /* ignore */ }
   }
 
@@ -256,8 +239,10 @@ export default function ImportData() {
   }
 
   const processFile = useCallback(async (file: File) => {
-    // Full reset on new file
     setStatus({ total: 0, imported: 0, updated: 0, skipped: 0, errors: [], phase: 'reading', columnMap: {}, unmappedHeaders: [] });
+
+    // ── Capture the active year at import time ──────────────────────────────
+    const importYear = getYear();
 
     try {
       const buffer = await file.arrayBuffer();
@@ -270,7 +255,6 @@ export default function ImportData() {
         return;
       }
 
-      // Build column mapping from actual headers
       const headers = Object.keys(rows[0]);
       const columnMap: Record<string, string> = {};
       const unmappedHeaders: string[] = [];
@@ -288,7 +272,6 @@ export default function ImportData() {
 
       setStatus(s => ({ ...s, phase: 'mapping', columnMap, unmappedHeaders }));
 
-      // Transform rows using the mapping
       const records = rows.map(row => {
         const rec: Record<string, unknown> = {};
         Object.entries(columnMap).forEach(([excelCol, dbCol]) => {
@@ -310,39 +293,52 @@ export default function ImportData() {
         return;
       }
 
-      // Filter out records without matricule_bac AND without NIN
-      const validRecords = records.filter(r => 
+      const validRecords = records.filter(r =>
         String(r.matricule_bac || '').trim() !== '' || String(r.nin || '').trim() !== ''
       );
       const noMatricule = records.length - validRecords.length;
 
-      // Fetch ALL existing students with their matricule_bac and NIN
-      let existingData: { id: string; matricule_bac: string | null; nin: string | null }[] = [];
+      // Fetch ALL existing students for this year — paginate to bypass 1000-row default limit
+      let existingData: { id: string; matricule_bac: string | null; nin: string | null; nom: string }[] = [];
       try {
-        const { data, error: fetchErr } = await supabase.from('students').select('id, matricule_bac, nin');
-        if (fetchErr) throw fetchErr;
-        existingData = data || [];
+        let page = 0;
+        const PAGE = 1000;
+        while (true) {
+          const { data, error: fetchErr } = await supabase
+            .from('students')
+            .select('id, matricule_bac, nin, nom')
+            .eq('annee', importYear)
+            .range(page * PAGE, (page + 1) * PAGE - 1);
+          if (fetchErr) throw fetchErr;
+          existingData = existingData.concat(data || []);
+          if (!data || data.length < PAGE) break;
+          page++;
+        }
       } catch (fetchErr) {
         setStatus(s => ({ ...s, phase: 'error', errors: [`فشل الاتصال بقاعدة البيانات: ${translateError(String(fetchErr))}`] }));
         return;
       }
 
-      // Build lookup maps by matricule_bac and NIN
-      const byMatricule = new Map<string, string>(); // matricule_bac → student id
-      const byNin = new Map<string, string>(); // nin → student id
+      const byMatricule = new Map<string, string>();
+      const byNin = new Map<string, string>();
+      const byNom = new Map<string, string>();
       existingData.forEach(e => {
         if (e.matricule_bac && String(e.matricule_bac).trim()) byMatricule.set(String(e.matricule_bac).trim(), e.id);
         if (e.nin && String(e.nin).trim()) byNin.set(String(e.nin).trim(), e.id);
+        if (e.nom && String(e.nom).trim()) byNom.set(String(e.nom).trim().toLowerCase(), e.id);
       });
 
-      // Classify records: existing (found by matricule or NIN) vs new
       const toUpdate: { id: string; record: Record<string, unknown> }[] = [];
       const newRecords: Record<string, unknown>[] = [];
 
       validRecords.forEach(r => {
         const matBac = String(r.matricule_bac || '').trim();
         const nin = String(r.nin || '').trim();
-        const existingId = byMatricule.get(matBac) || byNin.get(nin) || null;
+        const nomKey = String(r.nom || '').trim().toLowerCase();
+        const existingId = (matBac ? byMatricule.get(matBac) : undefined)
+          || (nin ? byNin.get(nin) : undefined)
+          || byNom.get(nomKey)
+          || null;
         if (existingId) {
           toUpdate.push({ id: existingId, record: r });
         } else {
@@ -361,7 +357,7 @@ export default function ImportData() {
         errors.push(`تم تجاهل ${noMatricule} سجل بدون رقم تسجيل`);
       }
 
-      // Insert new students
+      // ── Insert new students — tagged with importYear ─────────────────────
       for (let i = 0; i < newRecords.length; i += BATCH_SIZE) {
         const batch = newRecords.slice(i, i + BATCH_SIZE).map(r => {
           const numIns = String(r.numero_inscription || '').trim();
@@ -388,24 +384,27 @@ export default function ImportData() {
             frais_inscription_paye: parseBoolean(r.frais_inscription_paye),
             paiement_hebergement: parseBoolean(r.paiement_hebergement),
             cle_remise: parseBoolean(r.cle_remise),
+            annee: importYear,   // ← السنة الأكاديمية من الـ localStorage
           };
         });
 
         try {
-          const { error } = await supabase.from('students').insert(batch);
-
+          // upsert: إذا وُجد رقم البكالوريا + السنة → حدّث، وإلا أضف جديد
+          const { error } = await supabase.from('students').upsert(batch, {
+            onConflict: 'matricule_bac,annee',
+            ignoreDuplicates: false,
+          });
           if (error) {
             for (const record of batch) {
               try {
-                const { error: singleError } = await supabase.from('students').insert(record);
+                const { error: singleError } = await supabase.from('students').upsert(record, {
+                  onConflict: 'matricule_bac,annee',
+                  ignoreDuplicates: false,
+                });
                 if (singleError) {
                   skipped++;
-                  if (errors.length < 10) {
-                    errors.push(`${record.nom}: ${translateError(singleError.message)}`);
-                  }
-                } else {
-                  imported++;
-                }
+                  if (errors.length < 10) errors.push(`${record.nom}: ${translateError(singleError.message)}`);
+                } else { imported++; }
               } catch {
                 skipped++;
                 if (errors.length < 10) errors.push(`${record.nom}: خطأ في الاتصال`);
@@ -417,17 +416,18 @@ export default function ImportData() {
         } catch {
           for (const record of batch) {
             try {
-              const { error: singleError } = await supabase.from('students').insert(record);
-              if (singleError) { skipped++; }
-              else { imported++; }
+              const { error: singleError } = await supabase.from('students').upsert(record, {
+                onConflict: 'matricule_bac,annee',
+                ignoreDuplicates: false,
+              });
+              if (singleError) { skipped++; } else { imported++; }
             } catch { skipped++; }
           }
         }
-
         setStatus(s => ({ ...s, imported, skipped }));
       }
 
-      // Update existing students by ID — updates ALL fields including pavillon and chambre
+      // ── Update existing students for this year ────────────────────────────
       for (const { id, record: r } of toUpdate) {
         const updateData: Record<string, unknown> = {
           pavillon: String(r.pavillon || ''),
@@ -438,9 +438,9 @@ export default function ImportData() {
           filiere: String(r.filiere || '') || undefined,
           etablissement: String(r.etablissement || '') || undefined,
           domaine: String(r.domaine || '') || undefined,
+          annee: importYear,    // ← تأكيد السنة عند التحديث
           updated_at: new Date().toISOString(),
         };
-        // Remove undefined keys
         Object.keys(updateData).forEach(k => updateData[k] === undefined && delete updateData[k]);
 
         try {
@@ -448,9 +448,7 @@ export default function ImportData() {
           if (error) {
             skipped++;
             if (errors.length < 10) errors.push(`${r.nom || id}: ${translateError(error.message)}`);
-          } else {
-            updated++;
-          }
+          } else { updated++; }
         } catch {
           skipped++;
           if (errors.length < 10) errors.push(`${r.nom || id}: خطأ في الاتصال أثناء التحديث`);
@@ -462,11 +460,9 @@ export default function ImportData() {
         errors.push(`تم تحديث ${updated} طالب موجود (الجناح، الغرفة، المفتاح، الدفع)`);
       }
 
-      // Count algerien vs etranger in imported records
-      const importedRecs = records.slice(0, imported);
       let algerien = 0, etranger = 0;
       records.forEach(r => {
-        const nat = (r.nationalite || '').toLowerCase().trim();
+        const nat = (r.nationalite || '').toString().toLowerCase().trim();
         if (nat.includes('algérien') || nat.includes('algerien') || nat === 'dz' || nat.includes('algérienne') || nat.includes('algerienne')) algerien++;
         else if (nat) etranger++;
       });
@@ -488,7 +484,6 @@ export default function ImportData() {
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) { (window as Window & { _importFileName?: string })._importFileName = file.name; processFile(file); }
-    // Reset input so the same file can be re-selected
     e.target.value = '';
   }
 
@@ -496,6 +491,17 @@ export default function ImportData() {
 
   return (
     <div className="space-y-5" dir="rtl">
+
+      {/* Active Year Banner */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+        <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
+        <p className="text-sm text-amber-800">
+          سيتم ربط الطلبة المستوردين بالسنة الأكاديمية
+          <span className="font-bold mx-1.5 bg-amber-100 px-2 py-0.5 rounded">{currentYear}</span>
+          — لتغيير السنة، استخدم اختيار السنة في أعلى الصفحة
+        </p>
+      </div>
+
       {/* Import History */}
       <div className="bg-white rounded-xl shadow-sm border border-amber-100 p-4">
         <button onClick={() => { loadHistory(); }}
@@ -513,10 +519,11 @@ export default function ImportData() {
                   <tr className="bg-amber-50">
                     <th className="border border-slate-200 px-2 py-1.5 text-right text-amber-700">التاريخ</th>
                     <th className="border border-slate-200 px-2 py-1.5 text-right text-amber-700">الملف</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-right text-amber-700">السنة</th>
                     <th className="border border-slate-200 px-2 py-1.5 text-center text-emerald-700">جديد</th>
                     <th className="border border-slate-200 px-2 py-1.5 text-center text-sky-700">محدّث</th>
-                    <th className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">🇩🇿 جزائري</th>
-                    <th className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">🌍 أجنبي</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">🇩🇿</th>
+                    <th className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">🌍</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -526,6 +533,7 @@ export default function ImportData() {
                         {new Date(log.date).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="border border-slate-200 px-2 py-1.5 text-slate-500 max-w-[120px] truncate">{log.file}</td>
+                      <td className="border border-slate-200 px-2 py-1.5 text-amber-700 font-medium">{log.annee || '—'}</td>
                       <td className="border border-slate-200 px-2 py-1.5 text-center font-bold text-emerald-600">{log.added}</td>
                       <td className="border border-slate-200 px-2 py-1.5 text-center font-bold text-sky-600">{log.updated}</td>
                       <td className="border border-slate-200 px-2 py-1.5 text-center text-slate-600">{log.algerien}</td>
@@ -628,7 +636,7 @@ export default function ImportData() {
           <div className="flex items-center gap-3 mb-3">
             <CheckCircle className="w-6 h-6 text-emerald-500" />
             <div>
-              <p className="font-bold text-slate-800">تم الاستيراد بنجاح</p>
+              <p className="font-bold text-slate-800">تم الاستيراد بنجاح — {currentYear}</p>
               <p className="text-sm text-slate-500">
                 {status.imported} طالب جديد + {status.updated} محدّث
                 {status.skipped > 0 && <span className="text-amber-600"> — {status.skipped} تم تخطيهم</span>}
@@ -658,21 +666,6 @@ export default function ImportData() {
             <button onClick={() => setStatus({ total: 0, imported: 0, updated: 0, skipped: 0, errors: [], phase: 'idle', columnMap: {}, unmappedHeaders: [] })} className="px-4 py-2 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
               إعادة المحاولة
             </button>
-          </div>
-        </div>
-      )}
-
-      {status.phase !== 'idle' && Object.keys(status.columnMap).length > 0 && status.phase !== 'mapping' && (
-        <div className="bg-white rounded-xl shadow-sm border border-amber-100 p-5">
-          <h4 className="text-sm font-bold text-slate-700 mb-3">تعيين الأعمدة</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-            {Object.entries(status.columnMap).map(([excel, db]) => (
-              <div key={excel} className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
-                <span className="text-slate-500 truncate max-w-[120px]" title={excel}>{excel}</span>
-                <span className="text-slate-300">→</span>
-                <span className="font-medium text-slate-700">{db}</span>
-              </div>
-            ))}
           </div>
         </div>
       )}
