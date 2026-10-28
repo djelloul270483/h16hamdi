@@ -11,10 +11,6 @@ import ClearanceCertificate from './pages/ClearanceCertificate';
 import ImportData from './pages/ImportData';
 import QuickSearch from './pages/QuickSearch';
 import AddStudent from './pages/AddStudent';
-<<<<<<< HEAD
-
-type Page = 'dashboard' | 'students' | 'plan' | 'housing-cert' | 'clearance-cert' | 'import' | 'search' | 'inventory' | 'add-student';
-=======
 import Registration from './pages/Registration';
 
 type Page =
@@ -28,7 +24,6 @@ type Page =
   | 'inventory'
   | 'add-student'
   | 'registration';
->>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard');
@@ -45,10 +40,7 @@ export default function App() {
       case 'import':         return <ImportData />;
       case 'search':         return <QuickSearch />;
       case 'add-student':    return <AddStudent />;
-<<<<<<< HEAD
-=======
       case 'registration':   return <Registration />;
->>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
       default:               return <Dashboard />;
     }
   };
