@@ -1,24 +1,16 @@
 import { ReactNode, useState, useEffect } from 'react';
 import {
   Home, Users, Map, FileText, FileCheck, Upload, Search,
-<<<<<<< HEAD
-  Menu, X, Building2, ChevronRight, Calendar, Clock, Pencil, Check, Wifi, WifiOff, UserPlus
-=======
   Menu, X, Building2, ChevronRight, Calendar, Clock, Pencil,
   Check, WifiOff, UserPlus, ClipboardList,
->>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getYear, setYear } from '../lib/constants';
 
-<<<<<<< HEAD
-type Page = 'dashboard' | 'students' | 'plan' | 'housing-cert' | 'clearance-cert' | 'import' | 'search' | 'inventory' | 'add-student';
-=======
 type Page =
   | 'dashboard' | 'students' | 'plan' | 'housing-cert'
   | 'clearance-cert' | 'import' | 'search' | 'inventory'
   | 'add-student' | 'registration';
->>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
 
 interface Props {
   currentPage: Page;
@@ -26,18 +18,6 @@ interface Props {
   children: ReactNode;
 }
 
-<<<<<<< HEAD
-const navItems = [
-  { id: 'dashboard' as Page, label: 'لوحة الإحصائيات', labelFr: 'Tableau de bord', icon: Home },
-  { id: 'students' as Page, label: 'قائمة الطلبة', labelFr: 'Liste des étudiants', icon: Users },
-  { id: 'plan' as Page, label: 'مخطط الإيواء', labelFr: "Plan d'hébergement", icon: Map },
-  { id: 'inventory' as Page, label: 'بطاقات الجرد', labelFr: 'Inventaire des chambres', icon: Building2 },
-  { id: 'housing-cert' as Page, label: 'شهادة الإيواء', labelFr: "Attestation d'hébergement", icon: FileText },
-  { id: 'clearance-cert' as Page, label: 'شهادة التبرئة', labelFr: 'Attestation de décharge', icon: FileCheck },
-  { id: 'import' as Page, label: 'استيراد البيانات', labelFr: 'Importer données', icon: Upload },
-  { id: 'add-student' as Page, label: 'إضافة طالب أجنبي', labelFr: 'Ajouter étudiant étranger', icon: UserPlus },
-  { id: 'search' as Page, label: 'بحث سريع', labelFr: 'Recherche rapide', icon: Search },
-=======
 const navItems: { id: Page; label: string; labelFr: string; icon: React.ElementType }[] = [
   { id: 'dashboard',     label: 'لوحة الإحصائيات',  labelFr: 'Tableau de bord',         icon: Home         },
   { id: 'students',      label: 'قائمة الطلبة',       labelFr: 'Liste des étudiants',      icon: Users        },
@@ -49,7 +29,6 @@ const navItems: { id: Page; label: string; labelFr: string; icon: React.ElementT
   { id: 'search',        label: 'بحث سريع',           labelFr: 'Recherche rapide',         icon: Search       },
   { id: 'add-student',   label: 'إضافة طالب أجنبي',   labelFr: 'Ajouter étudiant étranger',icon: UserPlus     },
   { id: 'registration',  label: 'تسجيل الإيواء',      labelFr: "Enregistrement d'accueil", icon: ClipboardList},
->>>>>>> c191818 (update: fix 1000 limit and dashboard improvements)
 ];
 
 // ── Live Clock ────────────────────────────────────────────────────────────────
