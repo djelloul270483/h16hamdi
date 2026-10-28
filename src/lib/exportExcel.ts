@@ -32,8 +32,18 @@ export async function exportStudentsToExcel(filters: FiltersState): Promise<void
   if (filters.sexe) query = query.eq('sexe', filters.sexe);
   query = query.order('nom');
 
-  const { data, error } = await query;
-  if (error || !data) throw new Error('فشل في جلب البيانات');
+  // جلب كل السجلات بالصفحات لتجاوز حد 1000
+  let allData: Student[] = [];
+  let page = 0;
+  const PAGE = 1000;
+  while (true) {
+    const { data, error } = await query.range(page * PAGE, (page + 1) * PAGE - 1);
+    if (error) throw new Error('فشل في جلب البيانات');
+    allData = allData.concat(data || []);
+    if (!data || data.length < PAGE) break;
+    page++;
+  }
+  const data = allData;
 
   const year = getYear();
   const wb = XLSX.utils.book_new();
